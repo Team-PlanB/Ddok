@@ -39,7 +39,7 @@ export default function StatusMatrix({ matrix }: { matrix: Matrix }) {
       columns={columns}
       dataSource={matrix.rows}
       pagination={false}
-      scroll={{ x: true }}
+      scroll={{ x: "max-content" }}
       locale={{ emptyText: "등록된 화면이 없습니다." }}
     />
   );

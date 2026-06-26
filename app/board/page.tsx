@@ -12,7 +12,7 @@ export default async function BoardPage() {
   const matrix = buildMatrix((data ?? []) as Task[]);
 
   return (
-    <main style={{ maxWidth: 1000, margin: "0 auto", padding: 24, width: "100%" }}>
+    <main className="page" style={{ maxWidth: 1000 }}>
       <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>현황판</h2>
 
       {error ? (

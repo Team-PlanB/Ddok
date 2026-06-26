@@ -35,7 +35,10 @@ export default function AddTaskForm() {
         name="name"
         rules={[{ required: true, message: "화면명을 입력하세요." }]}
       >
-        <Input placeholder="화면명 (예: 로그인, 메인화면)" style={{ width: 240 }} />
+        <Input
+          placeholder="화면명 (예: 로그인, 메인화면)"
+          style={{ width: 240, maxWidth: "100%" }}
+        />
       </Form.Item>
 
       <Form.Item
@@ -45,7 +48,7 @@ export default function AddTaskForm() {
         <Select
           mode="multiple"
           allowClear
-          style={{ minWidth: 240 }}
+          style={{ width: 280, maxWidth: "100%" }}
           placeholder="직군 선택 (복수 가능)"
           options={CATEGORIES.map((c) => ({ value: c, label: c }))}
         />

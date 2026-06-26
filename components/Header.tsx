@@ -9,7 +9,9 @@ export default function Header({ email }: { email: string }) {
     <Flex
       align="center"
       justify="space-between"
-      style={{ padding: "12px 24px", borderBottom: "1px solid #f0f0f0" }}
+      wrap
+      gap={12}
+      className="app-header"
     >
       <Flex align="center" gap={24}>
         <Link href="/">

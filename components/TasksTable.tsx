@@ -148,6 +148,7 @@ export default function TasksTable({ tasks }: { tasks: Task[] }) {
         dataSource={filtered}
         loading={pending}
         pagination={false}
+        scroll={{ x: "max-content" }}
         locale={{ emptyText: "조건에 맞는 화면이 없습니다." }}
       />
     </Flex>

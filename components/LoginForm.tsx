@@ -19,7 +19,11 @@ export default function LoginForm() {
   }
 
   return (
-    <Form layout="vertical" onFinish={onFinish} style={{ width: 320 }}>
+    <Form
+      layout="vertical"
+      onFinish={onFinish}
+      style={{ width: 320, maxWidth: "100%" }}
+    >
       <Form.Item
         label="이메일"
         name="email"

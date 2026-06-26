@@ -9,7 +9,7 @@ export default async function DashboardPage() {
   const summary = summarizeTasks(tasks);
 
   return (
-    <main style={{ maxWidth: 880, margin: "0 auto", padding: 24, width: "100%" }}>
+    <main className="page" style={{ maxWidth: 880 }}>
       <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>대시보드</h2>
 
       {error ? (
