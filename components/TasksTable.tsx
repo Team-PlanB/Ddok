@@ -1,16 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import {
-  App,
-  Button,
-  Flex,
-  Popconfirm,
-  Segmented,
-  Select,
-  Table,
-  Typography,
-} from "antd";
+import { App, Button, Flex, Popconfirm, Segmented, Select, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { deleteTask, updateTask, updateTaskStatus } from "@/app/actions";
 import {
@@ -67,20 +58,6 @@ export default function TasksTable({ tasks }: { tasks: Task[] }) {
     {
       title: "화면명",
       dataIndex: "name",
-      render: (_, task) => (
-        <Typography.Text
-          editable={{
-            onChange: (value) => {
-              const name = value.trim();
-              if (name && name !== task.name) {
-                run(() => updateTask(task.id, name, task.category));
-              }
-            },
-          }}
-        >
-          {task.name}
-        </Typography.Text>
-      ),
     },
     {
       title: "직군",
