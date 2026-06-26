@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-// 슬랙 일일 요약용 차트 이미지(PNG) 렌더. 사이디 브랜드 컬러로 카드형 통계 + 직군별 막대.
+// 슬랙 일일 요약용 차트 이미지(PNG). 사이디 브랜드 컬러로 카드형 통계 + 직군별 막대.
 // 쿼리: total, done, doing, todo, date, cats(JSON: [[name, done, total], ...])
 // 공개 라우트(슬랙이 unauth로 fetch). 집계 수치만 받으므로 민감정보 없음.
 
@@ -28,7 +28,7 @@ function pct(done: number, total: number) {
   return total === 0 ? 0 : Math.round((done / total) * 100);
 }
 
-function Bar({ percent, height = 14 }: { percent: number; height?: number }) {
+function Bar({ percent, height = 18 }: { percent: number; height?: number }) {
   return (
     <div
       style={{
@@ -68,8 +68,8 @@ export async function GET(request: Request) {
 
   const overall = pct(done, total);
   const fonts = await loadFonts();
-  const width = 820;
-  const height = total === 0 ? 300 : 470 + cats.length * 72;
+  const width = 800;
+  const height = total === 0 ? 320 : 540 + cats.length * 72;
 
   const stats: [string, number][] = [
     ["완료", done],
@@ -87,46 +87,46 @@ export async function GET(request: Request) {
           width: "100%",
           height: "100%",
           backgroundColor: "#FFFFFF",
-          padding: 48,
+          padding: 52,
           fontFamily: "Pretendard",
         }}
       >
         {/* 헤더 */}
-        <div style={{ display: "flex", flexDirection: "column", marginBottom: 28 }}>
-          <div style={{ display: "flex", fontSize: 36, fontWeight: 700, color: INK }}>
+        <div style={{ display: "flex", flexDirection: "column", marginBottom: 30 }}>
+          <div style={{ display: "flex", fontSize: 46, fontWeight: 700, color: INK }}>
             Ddok 일일 요약
           </div>
-          <div style={{ display: "flex", fontSize: 20, color: SUB, marginTop: 4 }}>
+          <div style={{ display: "flex", fontSize: 24, color: SUB, marginTop: 6 }}>
             Sidee · {date}
           </div>
         </div>
 
         {total === 0 ? (
-          <div style={{ display: "flex", fontSize: 22, color: SUB }}>
+          <div style={{ display: "flex", fontSize: 28, color: SUB }}>
             등록된 화면이 없습니다.
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
             {/* 전체 진행률 */}
-            <div style={{ display: "flex", flexDirection: "column", marginBottom: 28 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 10 }}>
-                <div style={{ display: "flex", fontSize: 20, fontWeight: 600, color: SUB }}>
+            <div style={{ display: "flex", flexDirection: "column", marginBottom: 32 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
+                <div style={{ display: "flex", fontSize: 24, fontWeight: 600, color: SUB }}>
                   전체 진행률
                 </div>
                 <div style={{ display: "flex", alignItems: "flex-end" }}>
-                  <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: PRIMARY }}>
+                  <div style={{ display: "flex", fontSize: 60, fontWeight: 700, color: PRIMARY }}>
                     {overall}%
                   </div>
-                  <div style={{ display: "flex", fontSize: 18, color: SUB, marginLeft: 10, marginBottom: 6 }}>
+                  <div style={{ display: "flex", fontSize: 22, color: SUB, marginLeft: 12, marginBottom: 10 }}>
                     {done}/{total} 완료
                   </div>
                 </div>
               </div>
-              <Bar percent={overall} height={18} />
+              <Bar percent={overall} height={24} />
             </div>
 
             {/* 통계 카드 */}
-            <div style={{ display: "flex", gap: 14, marginBottom: 30 }}>
+            <div style={{ display: "flex", gap: 16, marginBottom: 34 }}>
               {stats.map(([label, value]) => (
                 <div
                   key={label}
@@ -135,12 +135,12 @@ export async function GET(request: Request) {
                     flexDirection: "column",
                     flex: 1,
                     backgroundColor: CARD_BG,
-                    borderRadius: 16,
-                    padding: "18px 20px",
+                    borderRadius: 18,
+                    padding: "24px 26px",
                   }}
                 >
-                  <div style={{ display: "flex", fontSize: 16, color: SUB }}>{label}</div>
-                  <div style={{ display: "flex", fontSize: 36, fontWeight: 700, color: INK, marginTop: 4 }}>
+                  <div style={{ display: "flex", fontSize: 20, color: SUB }}>{label}</div>
+                  <div style={{ display: "flex", fontSize: 50, fontWeight: 700, color: INK, marginTop: 6 }}>
                     {value}
                   </div>
                 </div>
@@ -148,21 +148,21 @@ export async function GET(request: Request) {
             </div>
 
             {/* 직군별 진행률 */}
-            <div style={{ display: "flex", fontSize: 20, fontWeight: 700, color: INK, marginBottom: 16 }}>
+            <div style={{ display: "flex", fontSize: 26, fontWeight: 700, color: INK, marginBottom: 18 }}>
               직군별 진행률
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               {cats.map(([name, cdone, ctotal]) => (
-                <div key={name} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div key={name} style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", fontSize: 19, fontWeight: 600, color: INK }}>
+                    <div style={{ display: "flex", fontSize: 23, fontWeight: 600, color: INK }}>
                       {name}
                     </div>
-                    <div style={{ display: "flex", fontSize: 17, color: SUB }}>
+                    <div style={{ display: "flex", fontSize: 20, color: SUB }}>
                       {pct(cdone, ctotal)}% ({cdone}/{ctotal})
                     </div>
                   </div>
-                  <Bar percent={pct(cdone, ctotal)} />
+                  <Bar percent={pct(cdone, ctotal)} height={16} />
                 </div>
               ))}
             </div>

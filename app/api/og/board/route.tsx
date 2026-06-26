@@ -42,13 +42,14 @@ export async function GET(request: Request) {
   }
 
   const fonts = await loadFonts();
-  const NAME_W = 220;
-  const COL_W = 120;
-  const ROW_H = 46;
-  const PAD = 48;
-  const width = Math.max(480, PAD * 2 + NAME_W + cols.length * COL_W);
+  const NAME_W = 270;
+  const COL_W = 150;
+  const ROW_H = 58;
+  const HEADER_H = 58;
+  const PAD = 52;
+  const width = Math.max(520, PAD * 2 + NAME_W + cols.length * COL_W);
   const height =
-    rows.length === 0 ? 260 : PAD * 2 + 74 + 46 + rows.length * ROW_H + 8;
+    rows.length === 0 ? 300 : PAD * 2 + 88 + HEADER_H + rows.length * ROW_H + 8;
 
   return new ImageResponse(
     (
@@ -63,17 +64,17 @@ export async function GET(request: Request) {
           fontFamily: "Pretendard",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", marginBottom: 20 }}>
-          <div style={{ display: "flex", fontSize: 32, fontWeight: 700, color: SIDEE.gray900 }}>
+        <div style={{ display: "flex", flexDirection: "column", marginBottom: 24 }}>
+          <div style={{ display: "flex", fontSize: 42, fontWeight: 700, color: SIDEE.gray900 }}>
             Ddok 현황판
           </div>
-          <div style={{ display: "flex", fontSize: 18, color: SIDEE.gray500, marginTop: 4 }}>
+          <div style={{ display: "flex", fontSize: 22, color: SIDEE.gray500, marginTop: 6 }}>
             Sidee · {date}
           </div>
         </div>
 
         {rows.length === 0 ? (
-          <div style={{ display: "flex", fontSize: 20, color: SIDEE.gray500 }}>
+          <div style={{ display: "flex", fontSize: 26, color: SIDEE.gray500 }}>
             등록된 화면이 없습니다.
           </div>
         ) : (
@@ -83,19 +84,19 @@ export async function GET(request: Request) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                height: 46,
+                height: HEADER_H,
                 borderBottomWidth: 2,
                 borderBottomStyle: "solid",
                 borderBottomColor: SIDEE.gray200,
               }}
             >
-              <div style={{ display: "flex", width: NAME_W, fontSize: 18, fontWeight: 700, color: SIDEE.gray800 }}>
+              <div style={{ display: "flex", width: NAME_W, fontSize: 22, fontWeight: 700, color: SIDEE.gray800 }}>
                 화면
               </div>
               {cols.map((c) => (
                 <div
                   key={c}
-                  style={{ display: "flex", width: COL_W, justifyContent: "center", fontSize: 17, fontWeight: 600, color: SIDEE.gray600 }}
+                  style={{ display: "flex", width: COL_W, justifyContent: "center", fontSize: 20, fontWeight: 600, color: SIDEE.gray600 }}
                 >
                   {c}
                 </div>
@@ -115,7 +116,7 @@ export async function GET(request: Request) {
                   borderBottomColor: SIDEE.gray100,
                 }}
               >
-                <div style={{ display: "flex", width: NAME_W, fontSize: 17, fontWeight: 600, color: SIDEE.gray900 }}>
+                <div style={{ display: "flex", width: NAME_W, fontSize: 21, fontWeight: 600, color: SIDEE.gray900 }}>
                   {name}
                 </div>
                 {cols.map((c, ci) => {
@@ -128,16 +129,16 @@ export async function GET(request: Request) {
                             display: "flex",
                             backgroundColor: STATUS_COLOR[status],
                             color: "#FFFFFF",
-                            fontSize: 14,
+                            fontSize: 17,
                             fontWeight: 600,
-                            padding: "4px 12px",
+                            padding: "6px 16px",
                             borderRadius: 999,
                           }}
                         >
                           {STATUS_LABELS[status]}
                         </div>
                       ) : (
-                        <div style={{ display: "flex", color: SIDEE.gray400, fontSize: 16 }}>—</div>
+                        <div style={{ display: "flex", color: SIDEE.gray400, fontSize: 20 }}>—</div>
                       )}
                     </div>
                   );
