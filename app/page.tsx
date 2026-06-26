@@ -1,8 +1,32 @@
-export default function Home() {
+import AddTaskForm from "@/components/AddTaskForm";
+import TasksTable from "@/components/TasksTable";
+import { createClient } from "@/lib/supabase/server";
+import type { Task } from "@/lib/tasks";
+
+export default async function ChecklistPage() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .order("created_at", { ascending: true });
+
+  const tasks = (data ?? []) as Task[];
+
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-      <h1 className="text-3xl font-semibold tracking-tight">Ddok</h1>
-      <p className="text-zinc-600 dark:text-zinc-400">똑 부러지는 프로젝트 관리</p>
+    <main style={{ maxWidth: 880, margin: "0 auto", padding: 24, width: "100%" }}>
+      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>
+        체크리스트
+      </h2>
+
+      <div style={{ marginBottom: 16 }}>
+        <AddTaskForm />
+      </div>
+
+      {error ? (
+        <p>불러오기 실패: {error.message}</p>
+      ) : (
+        <TasksTable tasks={tasks} />
+      )}
     </main>
   );
 }

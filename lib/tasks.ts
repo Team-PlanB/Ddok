@@ -1,0 +1,81 @@
+// tasks 도메인 공통 타입/상수. SPEC/DECISIONS 의 데이터 모델과 1:1.
+
+export const CATEGORIES = ["개발", "디자인", "기획", "기타"] as const;
+export type Category = (typeof CATEGORIES)[number];
+
+export const STATUSES = ["todo", "doing", "done"] as const;
+export type Status = (typeof STATUSES)[number];
+
+// DB 는 영문키로 저장, 화면엔 한글로 표시.
+export const STATUS_LABELS: Record<Status, string> = {
+  todo: "대기",
+  doing: "진행중",
+  done: "완료",
+};
+
+export const PROJECT = "Sidee";
+
+export type Task = {
+  id: string;
+  project: string;
+  name: string;
+  category: Category;
+  status: Status;
+  completed_at: string | null;
+  created_at: string;
+};
+
+// --- 집계 (대시보드 + Cron 요약 공용) ---
+
+export type CategorySummary = {
+  category: Category;
+  total: number;
+  done: number;
+  doing: number;
+  todo: number;
+  percent: number;
+};
+
+export type Summary = {
+  total: number;
+  done: number;
+  doing: number;
+  todo: number;
+  percent: number;
+  byCategory: CategorySummary[];
+};
+
+function percentOf(done: number, total: number): number {
+  return total === 0 ? 0 : Math.round((done / total) * 100);
+}
+
+export function summarizeTasks(tasks: Task[]): Summary {
+  const countBy = (list: Task[], s: Status) =>
+    list.filter((t) => t.status === s).length;
+
+  const done = countBy(tasks, "done");
+  const doing = countBy(tasks, "doing");
+  const todo = countBy(tasks, "todo");
+
+  const byCategory: CategorySummary[] = CATEGORIES.map((category) => {
+    const list = tasks.filter((t) => t.category === category);
+    const d = countBy(list, "done");
+    return {
+      category,
+      total: list.length,
+      done: d,
+      doing: countBy(list, "doing"),
+      todo: countBy(list, "todo"),
+      percent: percentOf(d, list.length),
+    };
+  }).filter((c) => c.total > 0);
+
+  return {
+    total: tasks.length,
+    done,
+    doing,
+    todo,
+    percent: percentOf(done, tasks.length),
+    byCategory,
+  };
+}

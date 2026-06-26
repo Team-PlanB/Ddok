@@ -1,0 +1,33 @@
+"use client";
+
+import Link from "next/link";
+import { Button, Flex, Typography } from "antd";
+import { logout } from "@/app/login/actions";
+
+export default function Header({ email }: { email: string }) {
+  return (
+    <Flex
+      align="center"
+      justify="space-between"
+      style={{ padding: "12px 24px", borderBottom: "1px solid #f0f0f0" }}
+    >
+      <Flex align="center" gap={24}>
+        <Link href="/">
+          <Typography.Text strong>Ddok</Typography.Text>
+        </Link>
+        <Flex gap={16}>
+          <Link href="/">체크리스트</Link>
+          <Link href="/dashboard">대시보드</Link>
+        </Flex>
+      </Flex>
+      <Flex align="center" gap={12}>
+        <Typography.Text type="secondary">{email}</Typography.Text>
+        <form action={logout}>
+          <Button size="small" htmlType="submit">
+            로그아웃
+          </Button>
+        </form>
+      </Flex>
+    </Flex>
+  );
+}
