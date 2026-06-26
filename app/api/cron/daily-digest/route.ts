@@ -26,8 +26,12 @@ export async function GET(request: Request) {
     dateStyle: "long",
   }).format(new Date());
 
-  // 차트 이미지 URL — 같은 배포 origin 의 /api/og/digest 로 집계 수치를 넘김.
-  const origin = new URL(request.url).origin;
+  // 차트 이미지 URL — 공개 도메인 고정(NEXT_PUBLIC_SITE_URL). 자동 Cron 호출 시
+  // request origin 이 보호된 *.vercel.app 로 잡혀 슬랙이 이미지를 못 가져오는 문제 방지.
+  // 미설정 시(로컬/수동) request origin 으로 폴백.
+  const base = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
+  ).replace(/\/$/, "");
   const params = new URLSearchParams({
     total: String(summary.total),
     done: String(summary.done),
@@ -38,7 +42,7 @@ export async function GET(request: Request) {
       summary.byCategory.map((c) => [c.category, c.done, c.total]),
     ),
   });
-  const imageUrl = `${origin}/api/og/digest?${params.toString()}`;
+  const imageUrl = `${base}/api/og/digest?${params.toString()}`;
 
   const { blocks, fallbackText } = buildDigestBlocks(summary, dateLabel, imageUrl);
   await sendSlackBlocks(blocks, fallbackText);
