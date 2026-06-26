@@ -26,7 +26,21 @@ export async function GET(request: Request) {
     dateStyle: "long",
   }).format(new Date());
 
-  const { blocks, fallbackText } = buildDigestBlocks(summary, dateLabel);
+  // 차트 이미지 URL — 같은 배포 origin 의 /api/og/digest 로 집계 수치를 넘김.
+  const origin = new URL(request.url).origin;
+  const params = new URLSearchParams({
+    total: String(summary.total),
+    done: String(summary.done),
+    doing: String(summary.doing),
+    todo: String(summary.todo),
+    date: dateLabel,
+    cats: JSON.stringify(
+      summary.byCategory.map((c) => [c.category, c.done, c.total]),
+    ),
+  });
+  const imageUrl = `${origin}/api/og/digest?${params.toString()}`;
+
+  const { blocks, fallbackText } = buildDigestBlocks(summary, dateLabel, imageUrl);
   await sendSlackBlocks(blocks, fallbackText);
 
   return NextResponse.json({ ok: true, total: summary.total });

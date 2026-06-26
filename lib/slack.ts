@@ -52,73 +52,22 @@ export function taskStatusMessage(task: {
   return `[알림] ${task.project} ${task.name} ${task.category} 작업이 ${STATUS_PHRASE[task.status]}.`;
 }
 
-// 경로 B — 텍스트/이모지 기반 게이지(별도 차트 이미지 불필요).
-function progressBar(percent: number, width = 10): string {
-  const filled = Math.max(0, Math.min(width, Math.round((percent / 100) * width)));
-  return "█".repeat(filled) + "░".repeat(width - filled);
-}
-
-// 경로 B — 하루 1회 요약 카드 블록 빌더. (마감 임박 섹션은 due_date 미사용으로 제외)
+// 경로 B — 하루 1회 요약 카드. 시각화는 /api/og/digest 가 렌더한 PNG 를 image 블록으로 표시
+// (사이디 브랜드 컬러·카드형 통계·직군별 막대). 텍스트/이모지 게이지는 가독성 한계로 폐기.
 export function buildDigestBlocks(
   summary: Summary,
   dateLabel: string,
+  imageUrl: string,
 ): { blocks: object[]; fallbackText: string } {
-  const fallbackText = `Ddok 일일 요약 — ${PROJECT}: 전체 진행률 ${summary.percent}% (완료 ${summary.done}/${summary.total})`;
-
-  const header = {
-    type: "header",
-    text: {
-      type: "plain_text",
-      text: `📊 Ddok 일일 요약 — ${PROJECT}`,
-      emoji: true,
-    },
-  };
-
-  if (summary.total === 0) {
-    return {
-      fallbackText,
-      blocks: [
-        header,
-        {
-          type: "section",
-          text: { type: "mrkdwn", text: `${dateLabel}\n등록된 화면이 없습니다.` },
-        },
-      ],
-    };
-  }
-
-  const categoryLines = summary.byCategory
-    .map(
-      (c) =>
-        `${c.category}  \`${progressBar(c.percent)}\`  ${c.percent}% (${c.done}/${c.total})`,
-    )
-    .join("\n");
+  const fallbackText = `Ddok 일일 요약 — ${PROJECT} (${dateLabel}): 전체 ${summary.percent}% · 완료 ${summary.done}/${summary.total}`;
 
   return {
     fallbackText,
     blocks: [
-      header,
-      { type: "context", elements: [{ type: "mrkdwn", text: dateLabel }] },
+      { type: "image", image_url: imageUrl, alt_text: fallbackText },
       {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*전체 진행률*  \`${progressBar(summary.percent)}\`  ${summary.percent}%`,
-        },
-      },
-      {
-        type: "section",
-        fields: [
-          { type: "mrkdwn", text: `*완료*\n${summary.done}` },
-          { type: "mrkdwn", text: `*진행중*\n${summary.doing}` },
-          { type: "mrkdwn", text: `*대기*\n${summary.todo}` },
-          { type: "mrkdwn", text: `*전체*\n${summary.total}` },
-        ],
-      },
-      { type: "divider" },
-      {
-        type: "section",
-        text: { type: "mrkdwn", text: `*직군별 진행률*\n${categoryLines}` },
+        type: "context",
+        elements: [{ type: "mrkdwn", text: "Ddok · 똑 부러지는 프로젝트 관리" }],
       },
     ],
   };

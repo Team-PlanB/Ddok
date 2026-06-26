@@ -29,7 +29,7 @@ export default function AddTaskForm() {
       form={form}
       layout="inline"
       onFinish={onFinish}
-      initialValues={{ categories: ["개발", "디자인", "기획"] }}
+      initialValues={{ categories: ["기획", "디자인", "백엔드", "프론트엔드"] }}
     >
       <Form.Item
         name="name"

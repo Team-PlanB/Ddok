@@ -1,6 +1,7 @@
 // tasks 도메인 공통 타입/상수. SPEC/DECISIONS 의 데이터 모델과 1:1.
 
-export const CATEGORIES = ["개발", "디자인", "기획", "기타"] as const;
+// 표시/집계 순서 = 실제 프로젝트 순서(기획 → 디자인 → 백엔드 → 프론트엔드), 기타는 catch-all 로 마지막.
+export const CATEGORIES = ["기획", "디자인", "백엔드", "프론트엔드", "기타"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 export const STATUSES = ["todo", "doing", "done"] as const;

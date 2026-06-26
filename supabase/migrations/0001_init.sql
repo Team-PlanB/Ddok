@@ -5,7 +5,7 @@ create table if not exists public.tasks (
   id           uuid        primary key default gen_random_uuid(),
   project      text        not null default 'Sidee',
   name         text        not null,
-  category     text        not null check (category in ('개발', '디자인', '기획', '기타')),
+  category     text        not null check (category in ('기획', '디자인', '백엔드', '프론트엔드', '기타')),
   status       text        not null default 'todo' check (status in ('todo', 'doing', 'done')),
   completed_at timestamptz,
   created_at   timestamptz not null default now()
