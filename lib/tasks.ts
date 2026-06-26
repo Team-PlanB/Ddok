@@ -80,3 +80,30 @@ export function summarizeTasks(tasks: Task[]): Summary {
     byCategory,
   };
 }
+
+// --- 화면 × 직군 매트릭스 (현황판) ---
+
+export type MatrixRow = {
+  name: string;
+  cells: Partial<Record<Category, Status>>;
+};
+export type Matrix = { columns: Category[]; rows: MatrixRow[] };
+
+// 행=화면(생성순), 열=데이터에 존재하는 직군(CATEGORIES 순서), 칸=상태.
+export function buildMatrix(tasks: Task[]): Matrix {
+  const columns = CATEGORIES.filter((c) => tasks.some((t) => t.category === c));
+  const order: string[] = [];
+  const byName = new Map<string, MatrixRow>();
+
+  for (const t of tasks) {
+    let row = byName.get(t.name);
+    if (!row) {
+      row = { name: t.name, cells: {} };
+      byName.set(t.name, row);
+      order.push(t.name);
+    }
+    row.cells[t.category] = t.status;
+  }
+
+  return { columns, rows: order.map((n) => byName.get(n)!) };
+}

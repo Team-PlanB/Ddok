@@ -17,6 +17,7 @@ export default function Header({ email }: { email: string }) {
         </Link>
         <Flex gap={16}>
           <Link href="/">체크리스트</Link>
+          <Link href="/board">현황판</Link>
           <Link href="/dashboard">대시보드</Link>
         </Flex>
       </Flex>

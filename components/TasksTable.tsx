@@ -22,23 +22,35 @@ import {
   type Task,
 } from "@/lib/tasks";
 
-type Filter = "all" | Status;
+type StatusFilter = "all" | Status;
+type CategoryFilter = "all" | Category;
 
-const FILTER_OPTIONS = [
+const STATUS_FILTER_OPTIONS = [
   { value: "all", label: "전체" },
   { value: "todo", label: STATUS_LABELS.todo },
   { value: "doing", label: STATUS_LABELS.doing },
   { value: "done", label: STATUS_LABELS.done },
 ];
 
+const CATEGORY_FILTER_OPTIONS = [
+  { value: "all", label: "직군 전체" },
+  ...CATEGORIES.map((c) => ({ value: c, label: c })),
+];
+
 export default function TasksTable({ tasks }: { tasks: Task[] }) {
   const [pending, startTransition] = useTransition();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const { message } = App.useApp();
 
   const filtered = useMemo(
-    () => (filter === "all" ? tasks : tasks.filter((t) => t.status === filter)),
-    [tasks, filter],
+    () =>
+      tasks.filter(
+        (t) =>
+          (statusFilter === "all" || t.status === statusFilter) &&
+          (categoryFilter === "all" || t.category === categoryFilter),
+      ),
+    [tasks, statusFilter, categoryFilter],
   );
 
   function run(fn: () => Promise<unknown>) {
@@ -117,18 +129,26 @@ export default function TasksTable({ tasks }: { tasks: Task[] }) {
 
   return (
     <Flex vertical gap={16}>
-      <Segmented
-        value={filter}
-        onChange={(value) => setFilter(value as Filter)}
-        options={FILTER_OPTIONS}
-      />
+      <Flex gap={12} wrap align="center">
+        <Segmented
+          value={statusFilter}
+          onChange={(value) => setStatusFilter(value as StatusFilter)}
+          options={STATUS_FILTER_OPTIONS}
+        />
+        <Select
+          value={categoryFilter}
+          style={{ width: 140 }}
+          onChange={(value) => setCategoryFilter(value as CategoryFilter)}
+          options={CATEGORY_FILTER_OPTIONS}
+        />
+      </Flex>
       <Table<Task>
         rowKey="id"
         columns={columns}
         dataSource={filtered}
         loading={pending}
         pagination={false}
-        locale={{ emptyText: "등록된 화면이 없습니다. 위에서 추가해 보세요." }}
+        locale={{ emptyText: "조건에 맞는 화면이 없습니다." }}
       />
     </Flex>
   );
