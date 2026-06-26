@@ -3,6 +3,12 @@ import { PROJECT, type Status, type Summary } from "@/lib/tasks";
 // 서버 전용 — SLACK_WEBHOOK_URL 은 NEXT_PUBLIC_ 이 아니므로 클라이언트 번들에 노출되지 않음.
 // 전송 실패가 호출부(사용자 액션/Cron)를 깨지 않도록 내부에서 삼키고 로그만 남김(SPEC 가드레일).
 async function postToSlack(body: Record<string, unknown>): Promise<void> {
+  // 로컬(개발)에서는 실제 슬랙 채널로 보내지 않음. 로컬에서 테스트하려면 SLACK_ENABLE=1.
+  if (process.env.NODE_ENV !== "production" && process.env.SLACK_ENABLE !== "1") {
+    console.log("[slack] 로컬 환경 — 전송 생략:", JSON.stringify(body));
+    return;
+  }
+
   const url = process.env.SLACK_WEBHOOK_URL;
   if (!url) {
     console.warn("[slack] SLACK_WEBHOOK_URL 미설정 — 전송 생략:", JSON.stringify(body));
