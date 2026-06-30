@@ -36,7 +36,7 @@ export default function Header({ email }: { email: string }) {
         <Drawer
           title="Ddok"
           placement="right"
-          width={260}
+          size={260}
           open={open}
           onClose={() => setOpen(false)}
         >
