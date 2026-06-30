@@ -1,15 +1,18 @@
 import { ImageResponse } from "next/og";
 
-// 슬랙 일일 요약용 차트 이미지(PNG). 사이디 브랜드 컬러로 카드형 통계 + 직군별 막대.
-// 쿼리: total, done, doing, todo, date, cats(JSON: [[name, done, total], ...])
-// 공개 라우트(슬랙이 unauth로 fetch). 집계 수치만 받으므로 민감정보 없음.
-// ※ AI 코멘트는 이미지에 넣지 않음 — 슬랙 텍스트 블록으로 보냄(가독성 + 짧은 URL).
+// 슬랙 일일 요약용 차트 이미지(PNG). 사이디 브랜드 컬러로 AI 코멘트 + 카드형 통계 + 직군별 막대.
+// 쿼리: total, done, doing, todo, date, cats(JSON: [[name, done, total], ...]),
+//       ai(JSON: { h, s, r:[[area,note]], c } — 있으면 AI 코멘트 카드 렌더)
+// 공개 라우트(슬랙이 unauth로 fetch). 집계 수치 + AI 코멘트만 받으므로 민감정보 없음.
 
 const PRIMARY = "#3368FF";
 const TRACK = "#EBF0FF";
 const CARD_BG = "#F4F7FF";
 const INK = "#111827";
 const SUB = "#6B7280";
+const WARNING = "#FF9200";
+
+type Ai = { h: string; s: string; r: [string, string][]; c: string };
 
 const FONT_BASE =
   "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/packages/pretendard/dist/public/static";
@@ -34,10 +37,18 @@ function aiLines(text: string, cpl: number) {
   return Math.max(1, Math.ceil([...text].length / cpl));
 }
 
-// 액션 아이템 카드가 차지할 높이 추정(넉넉하게 — 모자라면 하단이 잘림).
-function estimateAiHeight(items: string[]) {
-  let h = 22 + 28 + 12; // 카드 상단 패딩 + 라벨
-  for (const it of items) h += aiLines(`• ${it}`, 30) * 32 + 8;
+// AI 코멘트 카드가 차지할 높이 추정(넉넉하게 — 모자라면 하단이 잘림).
+function estimateAiHeight(ai: Ai) {
+  let h = 22 + 26 + 8; // 카드 상단 패딩 + 라벨
+  h += aiLines(ai.h, 24) * 36; // headline
+  h += 6 + aiLines(ai.s, 28) * 34; // summary
+  if (ai.r.length > 0) {
+    h += 12 + 24; // "살펴보면 좋은 점" 라벨
+    for (const [area, note] of ai.r) {
+      h += aiLines(`· ${area} — ${note}`, 28) * 32 + 4;
+    }
+  }
+  h += 12 + aiLines(`추천 · ${ai.c}`, 26) * 32; // recommendation
   h += 22 + 30; // 카드 하단 패딩 + margin-bottom
   return h;
 }
@@ -80,26 +91,37 @@ export async function GET(request: Request) {
     cats = [];
   }
 
-  // 액션 아이템(있으면). 길이는 방어적으로 잘라 이미지 밖으로 안 넘치게.
+  // AI 코멘트(있으면). 압축 키 h/s/r/c. 길이는 방어적으로 잘라 이미지 밖으로 안 넘치게.
   const clip = (s: string, max: number) =>
     [...s].length > max ? [...s].slice(0, max - 1).join("") + "…" : s;
-  let actionItems: string[] = [];
+  let ai: Ai | null = null;
   try {
     const raw = sp.get("ai");
     if (raw) {
       const p = JSON.parse(raw);
-      if (Array.isArray(p)) {
-        actionItems = p.slice(0, 3).map((x) => clip(String(x ?? ""), 90));
-      }
+      ai = {
+        h: clip(String(p.h ?? ""), 40),
+        s: clip(String(p.s ?? ""), 160),
+        r: (Array.isArray(p.r) ? p.r : [])
+          .slice(0, 3)
+          .map(
+            (x: [string, string]) =>
+              [clip(String(x?.[0] ?? ""), 16), clip(String(x?.[1] ?? ""), 60)] as [
+                string,
+                string,
+              ],
+          ),
+        c: clip(String(p.c ?? ""), 90),
+      };
     }
   } catch {
-    actionItems = [];
+    ai = null;
   }
 
   const overall = pct(done, total);
   const fonts = await loadFonts();
   const width = 800;
-  const aiHeight = actionItems.length > 0 ? estimateAiHeight(actionItems) : 0;
+  const aiHeight = ai ? estimateAiHeight(ai) : 0;
   const height = total === 0 ? 320 : 540 + cats.length * 72 + aiHeight;
 
   const stats: [string, number][] = [
@@ -132,8 +154,8 @@ export async function GET(request: Request) {
           </div>
         </div>
 
-        {/* 액션 아이템 카드 */}
-        {actionItems.length > 0 && (
+        {/* AI 코멘트 카드 */}
+        {ai && (
           <div
             style={{
               display: "flex",
@@ -145,17 +167,33 @@ export async function GET(request: Request) {
               marginBottom: 30,
             }}
           >
-            <div style={{ display: "flex", fontSize: 20, fontWeight: 700, color: PRIMARY, marginBottom: 12 }}>
-              오늘의 액션 아이템
+            <div style={{ display: "flex", fontSize: 18, fontWeight: 600, color: PRIMARY, marginBottom: 8 }}>
+              AI 코멘트
             </div>
-            {actionItems.map((it, i) => (
-              <div
-                key={i}
-                style={{ display: "flex", fontSize: 23, color: INK, lineHeight: 1.45, marginBottom: 8 }}
-              >
-                {`• ${it}`}
+            <div style={{ display: "flex", fontSize: 26, fontWeight: 700, color: INK, lineHeight: 1.3 }}>
+              {ai.h}
+            </div>
+            <div style={{ display: "flex", fontSize: 21, color: INK, lineHeight: 1.5, marginTop: 6 }}>
+              {ai.s}
+            </div>
+            {ai.r.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", marginTop: 12 }}>
+                <div style={{ display: "flex", fontSize: 18, fontWeight: 700, color: WARNING, marginBottom: 6 }}>
+                  살펴보면 좋은 점
+                </div>
+                {ai.r.map(([area, note], i) => (
+                  <div
+                    key={i}
+                    style={{ display: "flex", fontSize: 19, color: SUB, lineHeight: 1.5, marginBottom: 4 }}
+                  >
+                    {`· ${area} — ${note}`}
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+            <div style={{ display: "flex", fontSize: 20, fontWeight: 600, color: PRIMARY, lineHeight: 1.5, marginTop: 12 }}>
+              {`추천 · ${ai.c}`}
+            </div>
           </div>
         )}
 

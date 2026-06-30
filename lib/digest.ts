@@ -15,7 +15,8 @@ export async function sendDailyDigest(
     dateStyle: "long",
   }).format(new Date());
 
-  // AI 액션 아이템은 OG 이미지 안에 렌더되도록 ai 파라미터로 함께 전달(실패 시 null → 생략).
+  // AI 분석은 실패해도 null 을 돌려주므로 요약 발송은 그대로 진행됨.
+  // 분석 결과는 OG 이미지 안에 렌더되도록 ai 파라미터로 함께 전달.
   const analysis = await analyzeProgress(tasks);
 
   const base = baseUrl.replace(/\/$/, "");
@@ -29,16 +30,25 @@ export async function sendDailyDigest(
       summary.byCategory.map((c) => [c.category, c.done, c.total]),
     ),
   });
-  if (analysis && analysis.actionItems.length > 0) {
-    params.set("ai", JSON.stringify(analysis.actionItems));
+  if (analysis) {
+    // 압축 키로 URL 길이 절약(h=headline, s=summary, r=[[area,note]], c=recommendation)
+    params.set(
+      "ai",
+      JSON.stringify({
+        h: analysis.headline,
+        s: analysis.summary,
+        r: analysis.risks.map((x) => [x.area, x.note]),
+        c: analysis.recommendation,
+      }),
+    );
   }
   let imageUrl = `${base}/api/og/digest?${params.toString()}`;
 
-  // 슬랙 image_url 3000자 제한 — 혹시 너무 길면 액션 아이템만 이미지에서 생략.
-  if (params.has("ai") && imageUrl.length > 2900) {
+  // 슬랙 image_url 은 3000자 제한 — AI 텍스트로 너무 길어지면 코멘트만 이미지에서 생략.
+  if (analysis && imageUrl.length > 2900) {
     params.delete("ai");
     imageUrl = `${base}/api/og/digest?${params.toString()}`;
-    console.warn("[digest] 이미지 URL이 너무 길어 액션 아이템을 생략");
+    console.warn("[digest] AI 코멘트 포함 이미지 URL이 너무 길어 코멘트를 생략");
   }
 
   const { blocks, fallbackText } = buildDigestBlocks(

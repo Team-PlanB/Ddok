@@ -59,19 +59,18 @@ export function taskStatusMessage(task: {
   return `[알림] ${task.project} ${task.name} ${task.category} 작업이 ${STATUS_PHRASE[task.status]}.`;
 }
 
-// 경로 B — 하루 1회 요약. AI 액션 아이템(있으면)은 /api/og/digest 가 렌더한 통계 PNG 이미지
-// 안에 함께 그려짐. 슬랙엔 이미지 + 컨텍스트만(텍스트 중복 없음).
+// 경로 B — 하루 1회 요약 카드. AI 코멘트(있으면)는 /api/og/digest 가 렌더한 PNG 이미지 안에
+// 함께 그려짐(사이디 브랜드 컬러·카드형 통계·직군별 막대). 슬랙엔 이미지 + 컨텍스트만.
 export function buildDigestBlocks(
   summary: Summary,
   dateLabel: string,
   imageUrl: string,
   analysis?: Analysis | null,
 ): { blocks: object[]; fallbackText: string } {
-  // fallbackText 는 알림 미리보기/접근성용.
-  const fallbackText =
-    analysis && analysis.actionItems.length > 0
-      ? `Ddok 일일 요약 — ${PROJECT} (${dateLabel}): ${analysis.actionItems[0]}`
-      : `Ddok 일일 요약 — ${PROJECT} (${dateLabel}): 전체 ${summary.percent}% · 완료 ${summary.done}/${summary.total}`;
+  // fallbackText 는 알림 미리보기/접근성용 — AI 코멘트가 있으면 headline 을 노출.
+  const fallbackText = analysis
+    ? `Ddok 일일 요약 — ${PROJECT} (${dateLabel}): ${analysis.headline}`
+    : `Ddok 일일 요약 — ${PROJECT} (${dateLabel}): 전체 ${summary.percent}% · 완료 ${summary.done}/${summary.total}`;
 
   return {
     fallbackText,
@@ -79,9 +78,7 @@ export function buildDigestBlocks(
       { type: "image", image_url: imageUrl, alt_text: fallbackText },
       {
         type: "context",
-        elements: [
-          { type: "mrkdwn", text: `Ddok · 똑 부러지는 프로젝트 관리 · ${dateLabel}` },
-        ],
+        elements: [{ type: "mrkdwn", text: "Ddok · 똑 부러지는 프로젝트 관리" }],
       },
     ],
   };
