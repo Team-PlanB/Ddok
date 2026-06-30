@@ -1,7 +1,20 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { App, Button, Flex, Popconfirm, Segmented, Select, Table } from "antd";
+import {
+  App,
+  Button,
+  Card,
+  Empty,
+  Flex,
+  Grid,
+  Popconfirm,
+  Segmented,
+  Select,
+  Spin,
+  Table,
+  Typography,
+} from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { deleteTask, updateTask, updateTaskStatus } from "@/app/actions";
 import {
@@ -28,11 +41,16 @@ const CATEGORY_FILTER_OPTIONS = [
   ...CATEGORIES.map((c) => ({ value: c, label: c })),
 ];
 
+const CATEGORY_OPTIONS = CATEGORIES.map((c) => ({ value: c, label: c }));
+const STATUS_OPTIONS = STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }));
+
 export default function TasksTable({ tasks }: { tasks: Task[] }) {
   const [pending, startTransition] = useTransition();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const { message } = App.useApp();
+  const screens = Grid.useBreakpoint();
+  const isMobile = screens.md === false;
 
   const filtered = useMemo(
     () =>
@@ -54,6 +72,95 @@ export default function TasksTable({ tasks }: { tasks: Task[] }) {
     });
   }
 
+  function CategorySelect({ task }: { task: Task }) {
+    return (
+      <Select<Category>
+        value={task.category}
+        style={{ width: isMobile ? "100%" : 120 }}
+        options={CATEGORY_OPTIONS}
+        onChange={(value) => run(() => updateTask(task.id, task.name, value))}
+      />
+    );
+  }
+
+  function StatusSelect({ task }: { task: Task }) {
+    return (
+      <Select<Status>
+        value={task.status}
+        style={{ width: isMobile ? "100%" : 120 }}
+        options={STATUS_OPTIONS}
+        onChange={(value) => run(() => updateTaskStatus(task.id, value))}
+      />
+    );
+  }
+
+  function DeleteButton({ task }: { task: Task }) {
+    return (
+      <Popconfirm
+        title="이 항목을 삭제할까요?"
+        okText="삭제"
+        cancelText="취소"
+        onConfirm={() => run(() => deleteTask(task.id))}
+      >
+        <Button type="text" size="small">
+          삭제
+        </Button>
+      </Popconfirm>
+    );
+  }
+
+  const filters = (
+    <Flex gap={12} wrap align="center">
+      <Segmented
+        value={statusFilter}
+        onChange={(value) => setStatusFilter(value as StatusFilter)}
+        options={STATUS_FILTER_OPTIONS}
+      />
+      <Select
+        value={categoryFilter}
+        style={{ width: 140 }}
+        onChange={(value) => setCategoryFilter(value as CategoryFilter)}
+        options={CATEGORY_FILTER_OPTIONS}
+      />
+    </Flex>
+  );
+
+  // 모바일: 화면당 카드(가로 스크롤 없이 세로로)
+  if (isMobile) {
+    return (
+      <Flex vertical gap={16}>
+        {filters}
+        <Spin spinning={pending}>
+          {filtered.length === 0 ? (
+            <Empty description="조건에 맞는 화면이 없습니다." />
+          ) : (
+            <Flex vertical gap={12}>
+              {filtered.map((task) => (
+                <Card key={task.id} size="small">
+                  <Flex vertical gap={12}>
+                    <Flex justify="space-between" align="center" gap={8}>
+                      <Typography.Text strong>{task.name}</Typography.Text>
+                      <DeleteButton task={task} />
+                    </Flex>
+                    <Flex gap={8}>
+                      <div style={{ flex: 1 }}>
+                        <CategorySelect task={task} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <StatusSelect task={task} />
+                      </div>
+                    </Flex>
+                  </Flex>
+                </Card>
+              ))}
+            </Flex>
+          )}
+        </Spin>
+      </Flex>
+    );
+  }
+
+  // 데스크톱/태블릿: 테이블
   const columns: ColumnsType<Task> = [
     {
       title: "화면명",
@@ -63,62 +170,25 @@ export default function TasksTable({ tasks }: { tasks: Task[] }) {
       title: "직군",
       dataIndex: "category",
       width: 140,
-      render: (_, task) => (
-        <Select<Category>
-          value={task.category}
-          style={{ width: 120 }}
-          options={CATEGORIES.map((c) => ({ value: c, label: c }))}
-          onChange={(value) => run(() => updateTask(task.id, task.name, value))}
-        />
-      ),
+      render: (_, task) => <CategorySelect task={task} />,
     },
     {
       title: "상태",
       dataIndex: "status",
       width: 140,
-      render: (_, task) => (
-        <Select<Status>
-          value={task.status}
-          style={{ width: 120 }}
-          options={STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))}
-          onChange={(value) => run(() => updateTaskStatus(task.id, value))}
-        />
-      ),
+      render: (_, task) => <StatusSelect task={task} />,
     },
     {
       title: "",
       key: "actions",
       width: 80,
-      render: (_, task) => (
-        <Popconfirm
-          title="이 항목을 삭제할까요?"
-          okText="삭제"
-          cancelText="취소"
-          onConfirm={() => run(() => deleteTask(task.id))}
-        >
-          <Button type="text" size="small">
-            삭제
-          </Button>
-        </Popconfirm>
-      ),
+      render: (_, task) => <DeleteButton task={task} />,
     },
   ];
 
   return (
     <Flex vertical gap={16}>
-      <Flex gap={12} wrap align="center">
-        <Segmented
-          value={statusFilter}
-          onChange={(value) => setStatusFilter(value as StatusFilter)}
-          options={STATUS_FILTER_OPTIONS}
-        />
-        <Select
-          value={categoryFilter}
-          style={{ width: 140 }}
-          onChange={(value) => setCategoryFilter(value as CategoryFilter)}
-          options={CATEGORY_FILTER_OPTIONS}
-        />
-      </Flex>
+      {filters}
       <Table<Task>
         rowKey="id"
         columns={columns}
