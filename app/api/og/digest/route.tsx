@@ -1,18 +1,14 @@
 import { ImageResponse } from "next/og";
 
-// 슬랙 일일 요약용 차트 이미지(PNG). 사이디 브랜드 컬러로 AI 코멘트 + 카드형 통계 + 직군별 막대.
-// 쿼리: total, done, doing, todo, date, cats(JSON: [[name, done, total], ...]),
-//       ai(JSON: { h, s, r:[[area,note]], c } — 있으면 AI 코멘트 카드 렌더)
-// 공개 라우트(슬랙이 unauth로 fetch). 집계 수치 + AI 코멘트만 받으므로 민감정보 없음.
+// 슬랙 일일 요약용 차트 이미지(PNG). 사이디 브랜드 컬러로 카드형 통계 + 직군별 막대.
+// 쿼리: total, done, doing, todo, date, cats(JSON: [[name, done, total], ...])
+// 공개 라우트(슬랙이 unauth로 fetch). 집계 수치만 받으므로 민감정보 없음.
 
 const PRIMARY = "#3368FF";
 const TRACK = "#EBF0FF";
 const CARD_BG = "#F4F7FF";
 const INK = "#111827";
 const SUB = "#6B7280";
-const WARNING = "#FF9200";
-
-type Ai = { h: string; s: string; r: [string, string][]; c: string };
 
 const FONT_BASE =
   "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/packages/pretendard/dist/public/static";
@@ -30,27 +26,6 @@ async function loadFonts() {
 
 function pct(done: number, total: number) {
   return total === 0 ? 0 : Math.round((done / total) * 100);
-}
-
-// 텍스트 줄 수 대략 추정(이미지 높이 사전 계산용). cpl=줄당 글자수(작게 잡아 넉넉히).
-function aiLines(text: string, cpl: number) {
-  return Math.max(1, Math.ceil([...text].length / cpl));
-}
-
-// AI 코멘트 카드가 차지할 높이 추정(넉넉하게 — 모자라면 하단이 잘림).
-function estimateAiHeight(ai: Ai) {
-  let h = 22 + 26 + 8; // 카드 상단 패딩 + 라벨
-  h += aiLines(ai.h, 24) * 36; // headline
-  h += 6 + aiLines(ai.s, 28) * 34; // summary
-  if (ai.r.length > 0) {
-    h += 12 + 24; // "살펴보면 좋은 점" 라벨
-    for (const [area, note] of ai.r) {
-      h += aiLines(`· ${area} — ${note}`, 28) * 32 + 4;
-    }
-  }
-  h += 12 + aiLines(`추천 · ${ai.c}`, 26) * 32; // recommendation
-  h += 22 + 30; // 카드 하단 패딩 + margin-bottom
-  return h;
 }
 
 function Bar({ percent, height = 18 }: { percent: number; height?: number }) {
@@ -91,38 +66,10 @@ export async function GET(request: Request) {
     cats = [];
   }
 
-  // AI 코멘트(있으면). 압축 키 h/s/r/c. 길이는 방어적으로 잘라 이미지 밖으로 안 넘치게.
-  const clip = (s: string, max: number) =>
-    [...s].length > max ? [...s].slice(0, max - 1).join("") + "…" : s;
-  let ai: Ai | null = null;
-  try {
-    const raw = sp.get("ai");
-    if (raw) {
-      const p = JSON.parse(raw);
-      ai = {
-        h: clip(String(p.h ?? ""), 40),
-        s: clip(String(p.s ?? ""), 160),
-        r: (Array.isArray(p.r) ? p.r : [])
-          .slice(0, 3)
-          .map(
-            (x: [string, string]) =>
-              [clip(String(x?.[0] ?? ""), 16), clip(String(x?.[1] ?? ""), 60)] as [
-                string,
-                string,
-              ],
-          ),
-        c: clip(String(p.c ?? ""), 90),
-      };
-    }
-  } catch {
-    ai = null;
-  }
-
   const overall = pct(done, total);
   const fonts = await loadFonts();
   const width = 800;
-  const aiHeight = ai ? estimateAiHeight(ai) : 0;
-  const height = total === 0 ? 320 : 540 + cats.length * 72 + aiHeight;
+  const height = total === 0 ? 320 : 540 + cats.length * 72;
 
   const stats: [string, number][] = [
     ["완료", done],
@@ -153,49 +100,6 @@ export async function GET(request: Request) {
             Sidee · {date}
           </div>
         </div>
-
-        {/* AI 코멘트 카드 */}
-        {ai && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              flexShrink: 0,
-              backgroundColor: CARD_BG,
-              borderRadius: 18,
-              padding: "22px 26px",
-              marginBottom: 30,
-            }}
-          >
-            <div style={{ display: "flex", fontSize: 18, fontWeight: 600, color: PRIMARY, marginBottom: 8 }}>
-              AI 코멘트
-            </div>
-            <div style={{ display: "flex", fontSize: 26, fontWeight: 700, color: INK, lineHeight: 1.3 }}>
-              {ai.h}
-            </div>
-            <div style={{ display: "flex", fontSize: 21, color: INK, lineHeight: 1.5, marginTop: 6 }}>
-              {ai.s}
-            </div>
-            {ai.r.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", marginTop: 12 }}>
-                <div style={{ display: "flex", fontSize: 18, fontWeight: 700, color: WARNING, marginBottom: 6 }}>
-                  살펴보면 좋은 점
-                </div>
-                {ai.r.map(([area, note], i) => (
-                  <div
-                    key={i}
-                    style={{ display: "flex", fontSize: 19, color: SUB, lineHeight: 1.5, marginBottom: 4 }}
-                  >
-                    {`· ${area} — ${note}`}
-                  </div>
-                ))}
-              </div>
-            )}
-            <div style={{ display: "flex", fontSize: 20, fontWeight: 600, color: PRIMARY, lineHeight: 1.5, marginTop: 12 }}>
-              {`추천 · ${ai.c}`}
-            </div>
-          </div>
-        )}
 
         {total === 0 ? (
           <div style={{ display: "flex", fontSize: 28, color: SUB }}>
