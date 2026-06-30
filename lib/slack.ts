@@ -1,3 +1,4 @@
+import type { Analysis } from "@/lib/ai";
 import { PROJECT, type Status, type Summary } from "@/lib/tasks";
 
 // 서버 전용 — SLACK_WEBHOOK_URL 은 NEXT_PUBLIC_ 이 아니므로 클라이언트 번들에 노출되지 않음.
@@ -58,14 +59,18 @@ export function taskStatusMessage(task: {
   return `[알림] ${task.project} ${task.name} ${task.category} 작업이 ${STATUS_PHRASE[task.status]}.`;
 }
 
-// 경로 B — 하루 1회 요약 카드. 시각화는 /api/og/digest 가 렌더한 PNG 를 image 블록으로 표시
-// (사이디 브랜드 컬러·카드형 통계·직군별 막대). 텍스트/이모지 게이지는 가독성 한계로 폐기.
+// 경로 B — 하루 1회 요약 카드. AI 코멘트(있으면)는 /api/og/digest 가 렌더한 PNG 이미지 안에
+// 함께 그려짐(사이디 브랜드 컬러·카드형 통계·직군별 막대). 슬랙엔 이미지 + 컨텍스트만.
 export function buildDigestBlocks(
   summary: Summary,
   dateLabel: string,
   imageUrl: string,
+  analysis?: Analysis | null,
 ): { blocks: object[]; fallbackText: string } {
-  const fallbackText = `Ddok 일일 요약 — ${PROJECT} (${dateLabel}): 전체 ${summary.percent}% · 완료 ${summary.done}/${summary.total}`;
+  // fallbackText 는 알림 미리보기/접근성용 — AI 코멘트가 있으면 headline 을 노출.
+  const fallbackText = analysis
+    ? `Ddok 일일 요약 — ${PROJECT} (${dateLabel}): ${analysis.headline}`
+    : `Ddok 일일 요약 — ${PROJECT} (${dateLabel}): 전체 ${summary.percent}% · 완료 ${summary.done}/${summary.total}`;
 
   return {
     fallbackText,
