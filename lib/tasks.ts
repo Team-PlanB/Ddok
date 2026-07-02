@@ -4,6 +4,42 @@
 export const CATEGORIES = ["기획", "디자인", "백엔드", "프론트엔드", "기타"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
+// 체크리스트에서 한 화면 안의 역할(직군) 정렬 순서: 기획 → 백엔드 → 디자인 → 프론트엔드 → 기타.
+// (현황판 컬럼/요약에 쓰는 CATEGORIES 와는 별개의 작업 흐름 순서.)
+export const CHECKLIST_CATEGORY_ORDER = [
+  "기획",
+  "백엔드",
+  "디자인",
+  "프론트엔드",
+  "기타",
+] as const satisfies readonly Category[];
+
+export function checklistCategoryRank(category: Category): number {
+  const i = CHECKLIST_CATEGORY_ORDER.indexOf(category);
+  return i === -1 ? CHECKLIST_CATEGORY_ORDER.length : i;
+}
+
+// 체크리스트 정렬: 화면(sort_order) → 역할(위 순서) → 생성순(안정 정렬 tie-break).
+export function sortForChecklist(tasks: Task[]): Task[] {
+  return [...tasks].sort(
+    (a, b) =>
+      a.sort_order - b.sort_order ||
+      checklistCategoryRank(a.category) - checklistCategoryRank(b.category),
+  );
+}
+
+// created_at(UTC ISO)이 한국시각 기준 '오늘'이면 true — New 뱃지용.
+export function isNewToday(createdAt: string): boolean {
+  const kst = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
+  return kst(new Date(createdAt)) === kst(new Date());
+}
+
 export const STATUSES = ["todo", "doing", "done"] as const;
 export type Status = (typeof STATUSES)[number];
 

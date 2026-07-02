@@ -1,16 +1,18 @@
 import AddTaskForm from "@/components/AddTaskForm";
 import TasksTable from "@/components/TasksTable";
 import { createClient } from "@/lib/supabase/server";
-import type { Task } from "@/lib/tasks";
+import { sortForChecklist, type Task } from "@/lib/tasks";
 
 export default async function ChecklistPage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
+    .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
-  const tasks = (data ?? []) as Task[];
+  // 화면(sort_order) → 역할(기획→백엔드→디자인→프론트) 순으로 정렬.
+  const tasks = sortForChecklist((data ?? []) as Task[]);
 
   return (
     <main className="page" style={{ maxWidth: 880 }}>
