@@ -3,7 +3,8 @@ import { SIDEE, STATUS_COLOR } from "@/lib/colors";
 import { STATUS_LABELS, type Status } from "@/lib/tasks";
 
 // 현황판(화면×직군 매트릭스) 이미지(PNG). 데이터는 쿼리로만 전달(공개 DB 노출 없음).
-// 쿼리: date, cols(JSON: string[]), rows(JSON: [name, digits][])  digit: 0=없음/1=대기/2=진행중/3=완료
+// 쿼리: date, cols(JSON: string[]), rows(JSON: [name, digits, new][])
+//   digit: 0=없음/1=대기/2=진행중/3=완료, new: "1"=오늘 추가/그 외=아님
 
 const FONT_BASE =
   "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/packages/pretendard/dist/public/static";
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
   const sp = new URL(request.url).searchParams;
   const date = sp.get("date") ?? "";
   let cols: string[] = [];
-  let rows: [string, string][] = [];
+  let rows: string[][] = [];
   try {
     cols = JSON.parse(sp.get("cols") ?? "[]");
   } catch {
@@ -104,7 +105,7 @@ export async function GET(request: Request) {
             </div>
 
             {/* 본문 */}
-            {rows.map(([name, digits]) => (
+            {rows.map(([name, digits, isNew]) => (
               <div
                 key={name}
                 style={{
@@ -116,8 +117,26 @@ export async function GET(request: Request) {
                   borderBottomColor: SIDEE.gray100,
                 }}
               >
-                <div style={{ display: "flex", width: NAME_W, fontSize: 21, fontWeight: 600, color: SIDEE.gray900 }}>
-                  {name}
+                <div style={{ display: "flex", width: NAME_W, alignItems: "center", gap: 8 }}>
+                  <div style={{ display: "flex", fontSize: 21, fontWeight: 600, color: SIDEE.gray900 }}>
+                    {name}
+                  </div>
+                  {isNew === "1" && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        backgroundColor: SIDEE.warning,
+                        color: "#FFFFFF",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        padding: "2px 9px",
+                        borderRadius: 6,
+                      }}
+                    >
+                      NEW
+                    </div>
+                  )}
                 </div>
                 {cols.map((c, ci) => {
                   const status = DIGIT_STATUS[digits[ci] ?? "0"];

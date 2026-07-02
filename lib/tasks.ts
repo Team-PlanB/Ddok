@@ -123,6 +123,7 @@ export function summarizeTasks(tasks: Task[]): Summary {
 export type MatrixRow = {
   name: string;
   cells: Partial<Record<Category, Status>>;
+  createdAt: string; // 화면(name) 최초 생성시각 — New 뱃지 판단용
 };
 export type Matrix = { columns: Category[]; rows: MatrixRow[] };
 
@@ -135,9 +136,11 @@ export function buildMatrix(tasks: Task[]): Matrix {
   for (const t of tasks) {
     let row = byName.get(t.name);
     if (!row) {
-      row = { name: t.name, cells: {} };
+      row = { name: t.name, cells: {}, createdAt: t.created_at };
       byName.set(t.name, row);
       order.push(t.name);
+    } else if (t.created_at < row.createdAt) {
+      row.createdAt = t.created_at; // 화면 내 가장 이른 생성시각 유지
     }
     row.cells[t.category] = t.status;
   }
