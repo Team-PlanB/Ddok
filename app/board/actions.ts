@@ -14,6 +14,7 @@ export async function sendBoardToSlack(): Promise<
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
+    .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
   if (error) return { error: error.message };
 

@@ -8,6 +8,7 @@ export default async function BoardPage() {
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
+    .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
   const matrix = buildMatrix((data ?? []) as Task[]);

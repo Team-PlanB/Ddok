@@ -24,6 +24,7 @@ export type Task = {
   status: Status;
   completed_at: string | null;
   created_at: string;
+  sort_order: number; // 화면 단위 순번(같은 name 은 동일 값). 오름차순 정렬.
 };
 
 // --- 집계 (대시보드 + Cron 요약 공용) ---

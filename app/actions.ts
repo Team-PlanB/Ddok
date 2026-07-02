@@ -31,14 +31,38 @@ export async function createTask(
   }
 
   const supabase = await createClient();
+
+  // 순번 결정: 이미 있는 화면이면 그 순번 재사용, 새 화면이면 맨 아래(max+1).
+  const { data: existing } = await supabase
+    .from("tasks")
+    .select("sort_order")
+    .eq("name", parsed.data.name)
+    .limit(1)
+    .maybeSingle();
+
+  let sortOrder: number;
+  if (existing) {
+    sortOrder = existing.sort_order;
+  } else {
+    const { data: maxRow } = await supabase
+      .from("tasks")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    sortOrder = (maxRow?.sort_order ?? 0) + 1;
+  }
+
   const rows = parsed.data.categories.map((category) => ({
     name: parsed.data.name,
     category,
+    sort_order: sortOrder,
   }));
   const { error } = await supabase.from("tasks").insert(rows);
   if (error) return { error: error.message };
 
   revalidatePath("/");
+  revalidatePath("/board");
   return { ok: true, count: rows.length };
 }
 
